@@ -1963,8 +1963,9 @@ feed_watchdog: MACRO
 ;
 ; variable/data section
 ;
-            ORG    $60         		; Insert your data definition here
-M60: DS.B   1
+
+            ORG    	RAMStart         	; Insert your data definition here
+ExampleVar: DS.B   1
 
 ;
 ; code section
@@ -1973,78 +1974,93 @@ M60: DS.B   1
             
 
 _Startup:
-			LDA	  	#$12			; WATCHDOG	
-            STA	  	SOPT1			; WATCHDOG
-            
-            LDHX   	#RAMEnd+1		; initialize the stack pointer
+			LDHX   #RAMEnd+1        	; initialize the stack pointer
             TXS
             
-            LDA	  #$53    			; Configura IRQMOD=1, IRQPE=1, IRQPDD=1, IRQIE=1
+			LDA	  	#$12				; DESHABILITAR WATCHDOG	
+            STA	  	SOPT1				; DESHABILITAR WATCHDOG
+            
+            LDA	  #$53    				; Configura IRQMOD=1, IRQPE=1, IRQPDD=1, IRQIE=1
         	STA   IRQSC
             
-            CLI						; enable interrupts
+            CLI							; enable interrupts
             
-Inicio:
-			LDA		#$FF			; Mover al acumulador el valor inmediato FF hexadecimal
-			STA		PTBDD			; Todos los pines del puerto B son salidas
+			LDA		#$FF				; Mover al acumulador el valor inmediato FF hexadecimal
+			STA		PTBDD				; Todos los pines del puerto B son salidas
 			
-			MOV		#$00,M60			; Si es 00, la rotacion es hacia la izquierda
-									; Si es FF, la rotacion es hacia la derecha
+			BCLR	PTADD_PTADD3,PTADD	; Pin 3 del puerto A como entrada
+			BCLR	PTADD_PTADD2,PTADD	; Pin 2 del puerto A como entrada
 			
-			SEC						; Bit de carry encendido
+			MOV		#$00,$60			; Si es 00, la rotacion es hacia la izquierda
+										; Si es FF, la rotacion es hacia la derecha
+										
+			SEC							; Bit de carry encendido
+Velocidad: 
+			LDA 	PTAD 				; Lee el valor del puerto A por completo
+			AND 	#$0C 				; Solo me interesan los pines 3 y 2
+			
+			CBEQA 	#$0C,Muy_baja	 	; Compara acumulador con valor inmediato "00001100"
+										; y si es igual brinca a la etiqueta "Muy_baja"
+			
+			CBEQA 	#$08,Baja	 		; Compara acumulador con valor inmediato "00001000"
+										; y si es igual brinca a la etiqueta "Baja"
+			
+			CBEQA 	#$04,Media	 		; Compara acumulador con valor inmediato "00000100"
+										; y si es igual brinca a la etiqueta "Media"
+			
+			BEQ 	Rapida	 			; Compara acumulador con valor inmediato "00000000"
+			
+Muy_baja:
+			LDX		#$FF				; Registro X se carga con un valor que hara que la velocidad sea muy baja
+			BRA		Rotar				; Brincar a rotar
+Baja:
+			LDX		#$C0				; Registro X se carga con un valor que hara que la velocidad sea baja
+			BRA		Rotar				; Brincar a rotar
+Media:
+			LDX		#$80				; Registro X se carga con un valor que hara que la velocidad sea media
+			BRA		Rotar				; Brincar a rotar
+Rapida:
+			LDX		#$40				; Registro X se carga con un valor que hara que la velocidad sea rapida
 Rotar:	
-			LDA		#$FF			; Inicio del retardo
-			LDX		#$FF
+			LDA		#$FF				; Inicio del retardo
 Retardo:
-			DBNZA	Retardo			; Decrementa el acumulador y brinca a la etiqueta "Retardo" si no es cero
-									; Si el acumulador es cero, realizará la instrucción "DBNZX	Retardo"
+			DBNZA	Retardo				; Decrementa el acumulador y brinca a la etiqueta "Retardo" si no es cero
+										; Si el acumulador es cero, realizará la instrucción "DBNZX	Retardo"
 									
-			DBNZX	Retardo			; Decrementa el registro X y brinca a la etiqueta "Retardo" si no es cero
-									; Si el registro X es cero, realizará la instrucción "ROL PTBD"
+			DBNZX	Retardo				; Decrementa el registro X y brinca a la etiqueta "Retardo" si no es cero
+										; Si el registro X es cero, realizará la instrucción "ROL PTBD"
 			
-			LDA		M60				; Cargar en el acumulador el valor de la direccion de memoria 60 hexadecimal
-			BEQ 	Izquierda		; Si el acumulador es 0, se brinca a la etiqueta "Izquierda"
-			BRA		Derecha			; Si el acumulador no es 0, se brinca a la etiqueta "Derecha"
+			LDA		$60					; Cargar en el acumulador el valor de la direccion de memoria 60 hexadecimal
+			BEQ 	Izquierda			; Si el acumulador es 0, se brinca a la etiqueta "Izquierda"
+			BRA		Derecha				; Si el acumulador no es 0, se brinca a la etiqueta "Derecha"
 Izquierda:	
-			ROL		PTBD			; Rotar a la izquierda el contenido del puerto B con el carry
-			BRA		Rotar			; Brincar a la etiqueta rotar
+			ROR		PTBD				; Rotar a la izquierda el contenido del puerto B con el carry
+			BRA		Velocidad			; Brincar a la etiqueta "Velocidad" indefinidamente
 Derecha:
-			ROR		PTBD			; Rotar a la derecha el contenido del puerto B con el carry
-			BRA		Rotar			; Brincar a la etiqueta rotar
+			ROL		PTBD				; Rotar a la derecha el contenido del puerto B con el carry
+			BRA		Velocidad			; Brincar a la etiqueta "Velocidad" indefinidamente
 			
-			BRA		Rotar			; Brincar a la etiqueta rotar indefinidamente
-			
-;**************************************************************
-;* spurious - Spurious Interrupt Service Routine.             *
-;*             (unwanted interrupt)                           *
-;**************************************************************
-
-spurious:				; placed here so that security value
-			NOP			; does not change all the time.
-			RTI
-
 ;**************************************************************
 ;* SubrutinaDireccion - Usando PIN PTA5 como IRQ              *
 ;*                                                            *
 ;**************************************************************
 
 SubrutinaDireccion:	
-				SEI  						; Quita las IRQ
+				SEI  					; Quita las IRQ
 				
-				BSET IRQSC_IRQACK,IRQSC		; Apagar la bandera IRQF
+				BSET IRQSC_IRQACK,IRQSC	; Apagar la bandera IRQF
+										
+				COM $60					; Operacion logica NOT con el valor de la direccion de memoria
 				
-				CLC							
-				COM M60						; Operacion logica NOT con el valor de la direccion de memoria 60 hexadecimal
-				
-				CLI   						; Activa las IRQ
-				RTI   						; Termina la IRQ
+				CLI   					; Activa las IRQ
+				RTI   					; Termina la IRQ
 
 ;**************************************************************
 ;*                 Interrupt Vectors                          *
 ;**************************************************************
 
             ORG	$FFFA
-			DC.W  SubrutinaDireccion   		; Para el pin IRQ 
+			DC.W  SubrutinaDireccion   	; Para el pin IRQ 
 			
 			ORG	$FFFE
-			DC.W  _Startup					; Reset
+			DC.W  _Startup				; Reset

@@ -98,7 +98,7 @@ mc9S08QG8_interrupciones.obj.s19: $(BBL_SRCS) $(EXECUTABLES)
 
 # Other Targets
 clean:
-	-$(RM) $(S_DEPS_QUOTED) "./*/*.d"  $(BURNER_OUTPUT_OUTPUTS_QUOTED) $(ASM_UPPER_DEPS_QUOTED) "./*/*.obj"  $(EXECUTABLES_QUOTED) $(S_UPPER_DEPS_QUOTED) $(ProjDirPath)/FLASH/mc9S08QG8_interrupciones.obj
+	-$(RM) $(S_DEPS_QUOTED) "./*/*.d"  $(BURNER_OUTPUT_OUTPUTS_QUOTED) $(ASM_UPPER_DEPS_QUOTED) "./*/*.obj"  $(EXECUTABLES_QUOTED) $(S_UPPER_DEPS_QUOTED) $(ProjDirPath)/FLASH/mc9S08QG8_interrupciones.obj $(ProjDirPath)/FLASH/mc9S08QG8_interrupciones.args $(ProjDirPath)/FLASH/mc9S08QG8_interrupciones.obj.args $(ProjDirPath)/FLASH/mc9S08QG8_interrupciones.obj.s19 $(ProjDirPath)/FLASH/mc9S08QG8_interrupciones.sx
 	-@echo ' '
 
 .PHONY: all clean dependents explicit-dependencies warning-messages
