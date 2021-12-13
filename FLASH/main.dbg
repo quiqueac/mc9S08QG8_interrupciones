@@ -1977,7 +1977,7 @@ _Startup:
 			LDHX   #RAMEnd+1        	; initialize the stack pointer
             TXS
             
-			LDA	  	#$12				; DESHABILITAR WATCHDOG	
+			LDA	  	#$12				; DATO INMEDIATO PARA DESHABILITAR WATCHDOG	
             STA	  	SOPT1				; DESHABILITAR WATCHDOG
             
             LDA	  #$53    				; Configura IRQMOD=1, IRQPE=1, IRQPDD=1, IRQIE=1
@@ -2008,7 +2008,7 @@ Velocidad:
 			CBEQA 	#$04,Media	 		; Compara acumulador con valor inmediato "00000100"
 										; y si es igual brinca a la etiqueta "Media"
 			
-			BEQ 	Rapida	 			; Compara acumulador con valor inmediato "00000000"
+			BEQ 	Alta	 			; Compara acumulador con valor inmediato "00000000"
 			
 Muy_baja:
 			LDX		#$FF				; Registro X se carga con un valor que hara que la velocidad sea muy baja
@@ -2019,8 +2019,8 @@ Baja:
 Media:
 			LDX		#$80				; Registro X se carga con un valor que hara que la velocidad sea media
 			BRA		Rotar				; Brincar a rotar
-Rapida:
-			LDX		#$40				; Registro X se carga con un valor que hara que la velocidad sea rapida
+Alta:
+			LDX		#$40				; Registro X se carga con un valor que hara que la velocidad sea alta
 Rotar:	
 			LDA		#$FF				; Inicio del retardo
 Retardo:
